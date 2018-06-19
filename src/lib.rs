@@ -62,6 +62,8 @@ extern crate xdg_basedir;
 #[cfg(feature = "ffi")]
 extern crate ffi_utils;
 
+pub use ffi::*;
+
 mod app;
 pub use app::App;
 
