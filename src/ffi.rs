@@ -24,7 +24,7 @@ use std::os::raw::c_void;
 pub unsafe extern "C" fn open_uri(
     uri: *const c_char,
     user_data: *mut c_void,
-    o_cb: extern "C" fn(*mut c_void, *const FfiResult),
+    o_cb: extern "C" fn(user_data: *mut c_void, result: *const FfiResult),
 ) {
     catch_unwind_cb(user_data, o_cb, || -> Result<()> {
         let uri = from_c_str(uri)?;
@@ -46,7 +46,7 @@ pub unsafe extern "C" fn install(
     icon: *const c_char,
     schemes: *const c_char,
     user_data: *mut c_void,
-    o_cb: extern "C" fn(*mut c_void, *const FfiResult),
+    o_cb: extern "C" fn(user_data: *mut c_void, result: *const FfiResult),
 ) {
     catch_unwind_cb(user_data, o_cb, || -> Result<()> {
         let mut exec = String::new();
