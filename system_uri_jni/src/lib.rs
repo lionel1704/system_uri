@@ -143,51 +143,16 @@ pub unsafe fn convert_cb_from_java(env: &JNIEnv, ctx: *mut c_void) -> GlobalRef 
     GlobalRef::from_raw(unwrap!(env.get_java_vm()), ctx as jobject)
 }
 
-/// Unwraps the results and checks for Java exceptions.
-/// Required for exceptions pass-through (simplifies debugging).
-#[macro_export]
-macro_rules! jni_unwrap {
-    ($res:expr) => {{
-        let res: Result<_, JniError> = $res;
-        if let Err(JniError(ErrorKind::JavaException, _)) = res {
-            return;
-        } else {
-            res.unwrap()
-        }
-    }};
-}
 
-/// Generates a `user_data` context containing a reference to a single or several Java callbacks
-#[macro_export]
-macro_rules! gen_ctx {
-    ($env:ident, $cb:ident) => {
-        {
-            let ctx = $env.new_global_ref($cb).unwrap();
-            $env.delete_local_ref($cb).unwrap();
-            let ptr = *ctx.as_obj() as *mut c_void;
-            mem::forget(ctx);
-            ptr
-        }
-    };
+gen_primitive_type_converter!(u8, jbyte);
+gen_primitive_type_converter!(i32, jint);
+gen_primitive_type_converter!(u32, jint);
+gen_primitive_type_converter!(i64, jlong);
+gen_primitive_type_converter!(u64, jlong);
 
-    ($env:ident, $cb0:ident, $($cb_rest:ident),+ ) => {
-        {
-            let ctx = [
-                Some($env.new_global_ref($cb0).unwrap()),
-                $(
-                    Some($env.new_global_ref($cb_rest).unwrap()),
-                )+
-            ];
-            let ctx = Box::into_raw(Box::new(ctx)) as *mut c_void;
-            $env.delete_local_ref($cb0).unwrap();
-            $(
-                $env.delete_local_ref($cb_rest).unwrap();
-            )+
-            ctx
-        }
-    }
-}
-
-
+gen_byte_array_converter!(i8, 8);
+gen_byte_array_converter!(u8, 24);
+gen_byte_array_converter!(u8, 32);
+gen_byte_array_converter!(u8, 64);
 
 include!("../../bindings/java/system_uri/jni.rs");
