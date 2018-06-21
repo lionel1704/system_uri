@@ -47,6 +47,17 @@ pub trait FromJava<T> {
         Self: Sized;
 }
 
+gen_primitive_type_converter!(u8, jbyte);
+gen_primitive_type_converter!(i32, jint);
+gen_primitive_type_converter!(u32, jint);
+gen_primitive_type_converter!(i64, jlong);
+gen_primitive_type_converter!(u64, jlong);
+
+gen_byte_array_converter!(i8, 8);
+gen_byte_array_converter!(u8, 24);
+gen_byte_array_converter!(u8, 32);
+gen_byte_array_converter!(u8, 64);
+
 impl<'a, 'b> ToJava<'a, JObject<'a>> for &'b [i32] {
     fn to_java(&self, env: &'a JNIEnv) -> JniResult<JObject<'a>> {
         let output = env.new_int_array(self.len() as jsize)?;
@@ -113,6 +124,18 @@ impl<'a> ToJava<'a, JString<'a>> for *mut c_char {
     }
 }
 
+impl<'a> FromJava<JString<'a>> for *const c_char {
+    fn from_java(env: &JNIEnv, input: JString) -> JniResult<Self> {
+        Ok(CString::from_java(env, input)?.into_raw())
+    }
+}
+
+impl<'a> ToJava<'a, JString<'a>> for *const c_char {
+    fn to_java(&self, env: &'a JNIEnv) -> JniResult<JString<'a>> {
+        Ok(unsafe { unwrap!(env.new_string(JNIStr::from_ptr(*self).to_owned())) })
+    }
+}
+
 
 impl<'a, 'b> ToJava<'a, JObject<'a>> for &'b [u8] {
     fn to_java(&self, env: &'a JNIEnv) -> JniResult<JObject<'a>> {
@@ -142,17 +165,5 @@ pub unsafe extern "C" fn JNI_OnLoad(vm: *mut jni::sys::JavaVM, _reserved: *mut c
 pub unsafe fn convert_cb_from_java(env: &JNIEnv, ctx: *mut c_void) -> GlobalRef {
     GlobalRef::from_raw(unwrap!(env.get_java_vm()), ctx as jobject)
 }
-
-
-gen_primitive_type_converter!(u8, jbyte);
-gen_primitive_type_converter!(i32, jint);
-gen_primitive_type_converter!(u32, jint);
-gen_primitive_type_converter!(i64, jlong);
-gen_primitive_type_converter!(u64, jlong);
-
-gen_byte_array_converter!(i8, 8);
-gen_byte_array_converter!(u8, 24);
-gen_byte_array_converter!(u8, 32);
-gen_byte_array_converter!(u8, 64);
 
 include!("../../bindings/java/system_uri/jni.rs");
